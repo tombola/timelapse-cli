@@ -21,8 +21,6 @@ parser.add_argument('--compile', '-c', help='Compile (with ffmpeg)', action='sto
 
 args = parser.parse_args()
 
-# TODO: convert to f strings (python3 all the way)
-
 if not args.folder:
     created_date = datetime.now().strftime("%Y%m%d_%H-%M")
     default_folder = default = os.getcwd() + '/' + args.name + '_' + created_date
@@ -49,34 +47,29 @@ def express_duration(seconds):
     hours = (seconds - days*86400)//3600
     minutes = (seconds - days*86400 - hours*3600)//60
     seconds = seconds - days*86400 - hours*3600 - minutes*60
-    result = ("{0} day{1}, ".format(days, "s" if days != 1 else "") if days else "") + \
-        ("{0} hour{1}, ".format(hours, "s" if hours != 1 else "") if hours else "") + \
-        ("{0} minute{1}, ".format(minutes, "s" if minutes != 1 else "") if minutes else "") + \
-        ("{0} second{1} ".format(
-            seconds, "s" if seconds != 1 else "") if seconds else "")
+    result = f'{days}d, ' \
+        f'{hours}hr, ' \
+        f'{minutes}min, ' \
+        f'{seconds}sec'
     return result
 
-
 def get_webcam(preferred='HD Pro Webcam C920'):
-    webcam = 'FaceTime HD Camera'
     webcam_list = subprocess.check_output("imagesnap -l;", stderr=subprocess.STDOUT, shell=True)
     webcams = re.findall(r"\[(.*?)\]", str(webcam_list))[0::2]
     return preferred if preferred in webcams else webcams[0]
-
-webcam = args.webcam or get_webcam()
 
 def get_filepath(count, as_pattern=False):
     # import pudb; pudb.set_trace()
     filename = filename_stub
     if args.date:
-        filename += '_' + created_date
+        f'{filename}_{created_date}'
     if as_pattern:
-        pattern = '%{}'.format(str(padding).zfill(2))
-        filename += '_{}d.jpg'.format(pattern)
+        pattern = f'%{str(padding).zfill(2)}'
+        filename += f'_{pattern}d.jpg'
     else:
-        filename += '_{}.jpg'.format(str(count).zfill(padding))
-    return destination + '/' + filename
+        filename += f'_{str(count).zfill(padding)}.jpg'
 
+    return f'{destination}/{filename}'
 
 def check_destination():
     if not os.path.isdir(destination):
@@ -84,6 +77,9 @@ def check_destination():
             os.mkdir(destination)
         except OSError:
             print("Destination folder %s couldn't be created" % destination)
+
+
+webcam = args.webcam or get_webcam()
 
 print(f'Capturing every {delay} seconds from {webcam}')
 print(f'- total recording duration {express_duration(duration)}')
@@ -98,9 +94,9 @@ while count <= max_count:
     subprocess.run(["imagesnap", "-d", webcam, output])
     sleep(1)
     subprocess.run(["clear"])
-    print('{}/{}'.format(count, max_count))
-    print('{} minutes recording time'.format(int((count*delay)/60)))
-    print('{} second timelapse'.format(int(count/30)))
+    print(f'{count}/{max_count}')
+    print(f'{int((count*delay)/60)} minutes recording time')
+    print(f'{int(count/30)} second timelapse')
     count += 1
     sleep(delay - 1)
 
@@ -110,9 +106,6 @@ while not os.path.exists(get_filepath(max_count)):
 
 if ffmpeg:
     filename_pattern = get_filepath(0, as_pattern=True)
-    # filename_pattern ='/Users/tom/Downloads/bread_timelapse/timelapse_20190317_08-52/timelapse_%01d.jpg'
-    print(filename_pattern)
-    # ffmpeg_command = 'ffmpeg -f image2 -r 1/5 -i {} -c:v libx264 -pix_fmt yuv420p {}/{}.mp4'.format(filename_pattern, destination, filename_stub)
     ffmpeg_command = [
         'ffmpeg',
         '-loglevel', 'panic',       # run silent
@@ -125,6 +118,7 @@ if ffmpeg:
         'yuv420p',                  # pixel format
         f'{destination}/{filename_stub}.mp4'
     ]
-    print(ffmpeg_command)
     sleep(2)
+    print('Compiling video..')
     subprocess.call(ffmpeg_command)
+    print(f'Compiled: {destination}/{filename_stub}.mp4')
