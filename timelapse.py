@@ -13,11 +13,12 @@ parser = argparse.ArgumentParser()
 parser.add_argument('delay', nargs='?', default=30, help='Delay in seconds')
 parser.add_argument('duration', nargs='?', default='00:30:00', help='Total recording duration, any format, no spaces')
 parser.add_argument('--framerate', '-r', help='Delay in seconds', default=30)
-parser.add_argument('--name', '-n', help='Destination filename for timelapse.', default='timelapse')
-parser.add_argument('--folder', '-f', help='Destination folder for timelapse.', default=None)
+parser.add_argument('--name', '-n', help='Destination filename for timelapse', default='timelapse')
+parser.add_argument('--folder', '-f', help='Destination folder for timelapse', default=None)
 parser.add_argument('--webcam', '-w', help='Webcam (see `imagesnap -l` for name)', default=None)
 parser.add_argument('--date', '-d', help='Add the date', action='store_true', default=False)
 parser.add_argument('--compile', '-c', help='Compile (with ffmpeg)', action='store_true', default=False)
+parser.add_argument('--list', '-l', help='List available webcams', action='store_true', default=False)
 
 args = parser.parse_args()
 
@@ -53,9 +54,12 @@ def express_duration(seconds):
         f'{seconds}sec'
     return result
 
-def get_webcam(preferred='HD Pro Webcam C920'):
+def get_webcam_list():
     webcam_list = subprocess.check_output("imagesnap -l;", stderr=subprocess.STDOUT, shell=True)
-    webcams = re.findall(r"\[(.*?)\]", str(webcam_list))[0::2]
+    return re.findall(r"\[(.*?)\]", str(webcam_list))[0::2]
+
+def get_webcam(preferred='HD Pro Webcam C920'):
+    webcams = get_webcam_list()
     return preferred if preferred in webcams else webcams[0]
 
 def get_filepath(count, as_pattern=False):
@@ -78,6 +82,11 @@ def check_destination():
         except OSError:
             print("Destination folder %s couldn't be created" % destination)
 
+
+if args.list:
+    for webcam in get_webcam_list():
+        print(webcam)
+    quit()
 
 webcam = args.webcam or get_webcam()
 

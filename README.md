@@ -21,10 +21,20 @@ Install [ffmpeg][ffmpeg]. Can take some time.. This is optional, for combining r
 
 `brew install ffmpeg`
 
+Collect python dependencies
+
+`pip -r requirements.txt`
+
 
 ## Usage
 
-Use imagesnap to determine available webcams via `imagesnap -l`.
+To record an image every 2min (120 seconds) for a duration of two and ahalf hours, and compile to mp4 video when complete:
+
+`./timelapse.py 120 2hr30min -c`
+
+If you need to change webcam, rather than defaulting to first found, use the 'list' parameter to determine available webcams: `./timelapse.py -l`.
+
+To see other configuration options `./timelapse.py --help`.
 
 [ffmpeg]: https://github.com/fluent-ffmpeg/node-fluent-ffmpeg/wiki/Installing-ffmpeg-on-Mac-OS-X
 [imagesnap]: https://github.com/rharder/imagesnap
